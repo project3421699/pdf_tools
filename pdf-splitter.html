@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Split Tool</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0d0d0d;
+            --paper: #f5f0e8;
+            --accent: #e84b2a;
+            --muted: #8a8070;
+            --border: #d4cfc5;
+            --card: #ffffff;
+            --success: #2a7a4b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Mono', monospace;
+            background-color: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            border-bottom: 2px solid var(--ink);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            background: var(--paper);
+        }
+
+        header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        header span {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* ── Left Panel ── */
+        .controls {
+            border-right: 2px solid var(--ink);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.6rem;
+            background: var(--paper);
+        }
+
+        .section-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.6rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 6px;
+            padding: 1.8rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: var(--card);
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent);
+            background: #fff8f6;
+        }
+        .upload-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.4rem;
+            display: block;
+        }
+        .upload-zone p {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .upload-zone .file-loaded {
+            font-size: 0.82rem;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .range-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.95rem;
+            background: var(--card);
+            color: var(--ink);
+            transition: border-color 0.2s;
+        }
+        .range-input:focus {
+            outline: none;
+            border-color: var(--ink);
+        }
+        .range-hint {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .page-info {
+            font-size: 0.78rem;
+            color: var(--muted);
+            padding: 0.6rem 0.8rem;
+            background: #f0ebe0;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent);
+            display: none;
+        }
+
+        .btn-preview {
+            background: var(--ink);
+            color: var(--paper);
+            border: 2px solid var(--ink);
+            padding: 11px;
+            border-radius: 6px;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.15s;
+            letter-spacing: 0.5px;
+        }
+        .btn-preview:hover:not(:disabled) {
+            background: var(--paper);
+            color: var(--ink);
+        }
+        .btn-preview:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-download {
+            background: var(--accent);
+            color: #fff;
+            border: 2px solid var(--accent);
+            padding: 11px;
+            border-radius: 6px;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.15s;
+            letter-spacing: 0.5px;
+            display: none;
+        }
+        .btn-download:hover:not(:disabled) {
+            background: #c93d22;
+            border-color: #c93d22;
+        }
+        .btn-download:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .status-msg {
+            font-size: 0.78rem;
+            min-height: 18px;
+            padding: 0.4rem 0;
+        }
+        .status-msg.error { color: var(--accent); }
+        .status-msg.success { color: var(--success); }
+        .status-msg.info { color: var(--muted); }
+
+        /* ── Right Panel: Preview ── */
+        .preview-panel {
+            background: #e8e3d8;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-header h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .preview-count {
+            font-size: 0.75rem;
+            color: var(--muted);
+            background: var(--border);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .pages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .page-thumb {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 3px 3px 0 var(--border);
+            transition: transform 0.15s, box-shadow 0.15s;
+            cursor: default;
+            animation: fadeIn 0.3s ease both;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-thumb:hover {
+            transform: translateY(-2px);
+            box-shadow: 5px 5px 0 var(--border);
+        }
+
+        .page-thumb canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .page-thumb .page-num {
+            font-size: 0.7rem;
+            font-family: 'DM Mono', monospace;
+            color: var(--muted);
+            text-align: center;
+            padding: 6px;
+            border-top: 1px solid var(--border);
+            background: #fafaf8;
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            text-align: center;
+            gap: 0.8rem;
+        }
+        .empty-state .big-icon {
+            font-size: 3.5rem;
+            opacity: 0.3;
+        }
+        .empty-state p {
+            font-size: 0.82rem;
+            line-height: 1.6;
+            max-width: 220px;
+        }
+
+        .loading-spinner {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--muted);
+            padding: 2rem;
+        }
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid var(--border);
+            border-top-color: var(--ink);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 700px) {
+            .layout { grid-template-columns: 1fr; }
+            .controls { border-right: none; border-bottom: 2px solid var(--ink); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>PDF Extractor</h1>
+    <span>// select pages → preview → download</span>
+</header>
+
+<div class="layout">
+    <!-- Controls -->
+    <aside class="controls">
+        <div>
+            <div class="section-label">01 — Upload</div>
+            <div class="upload-zone" id="uploadZone">
+                <span class="upload-icon">📄</span>
+                <p id="uploadText">Click or drag a PDF here</p>
+                <input type="file" id="pdfInput" accept="application/pdf">
+            </div>
+        </div>
+
+        <div>
+            <div class="section-label">02 — Page Range</div>
+            <input type="text" class="range-input" id="pageRanges" placeholder="e.g. 1-5, 8, 11-13">
+            <div class="range-hint">Comma-separated numbers &amp; ranges.<br>Leave blank to preview all pages.</div>
+            <div class="page-info" id="pageInfo"></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.7rem;">
+            <button class="btn-preview" id="previewBtn" onclick="runPreview()" disabled>Preview Pages</button>
+            <button class="btn-download" id="downloadBtn" onclick="processPDF()">⬇ Download PDF</button>
+        </div>
+
+        <div class="status-msg" id="statusMsg"></div>
+    </aside>
+
+    <!-- Preview -->
+    <main class="preview-panel">
+        <div class="preview-header">
+            <h2>Page Preview</h2>
+            <span class="preview-count" id="previewCount">0 pages</span>
+        </div>
+
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div> Rendering pages…
+        </div>
+
+        <div class="pages-grid" id="pagesGrid"></div>
+
+        <div class="empty-state" id="emptyState">
+            <span class="big-icon">🗂</span>
+            <p>Upload a PDF and enter page ranges, then click <strong>Preview Pages</strong> to see thumbnails here.</p>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Configure pdf.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const { PDFDocument } = PDFLib;
+
+    let selectedFileBytes = null;
+    let selectedFileName = "";
+    let pdfJsDoc = null;
+    let totalPages = 0;
+    let currentPreviewedPages = [];
+
+    // ── File Upload ──
+    const uploadZone = document.getElementById('uploadZone');
+    const pdfInput = document.getElementById('pdfInput');
+
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+    });
+
+    pdfInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+        if (file.type !== 'application/pdf') {
+            showStatus("Please upload a valid PDF file.", "error");
+            return;
+        }
+        selectedFileName = file.name;
+        showStatus("Loading file…", "info");
+
+        const reader = new FileReader();
+        reader.onload = async function(ev) {
+            selectedFileBytes = ev.target.result;
+            // Load with pdf.js for preview rendering
+            try {
+                pdfJsDoc = await pdfjsLib.getDocument({ data: selectedFileBytes.slice(0) }).promise;
+                totalPages = pdfJsDoc.numPages;
+
+                document.getElementById('uploadText').innerHTML = `<span class="file-loaded">✓ ${file.name}</span>`;
+                document.getElementById('pageInfo').style.display = 'block';
+                document.getElementById('pageInfo').textContent = `${totalPages} pages total`;
+                document.getElementById('previewBtn').disabled = false;
+                document.getElementById('downloadBtn').style.display = 'none';
+                currentPreviewedPages = [];
+                showStatus("File loaded. Preview pages to continue.", "success");
+            } catch(err) {
+                showStatus("Failed to read PDF: " + err.message, "error");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // ── Parse Page Ranges ──
+    function parsePageNumbers(rangeStr, maxPages) {
+        if (!rangeStr.trim()) {
+            // All pages
+            return Array.from({ length: maxPages }, (_, i) => i);
+        }
+        const pages = new Set();
+        rangeStr.split(',').forEach(part => {
+            part = part.trim();
+            if (part.includes('-')) {
+                const [a, b] = part.split('-').map(Number);
+                if (!isNaN(a) && !isNaN(b)) {
+                    const [s, e] = a <= b ? [a, b] : [b, a];
+                    for (let i = s; i <= e; i++) {
+                        if (i >= 1 && i <= maxPages) pages.add(i - 1);
+                    }
+                }
+            } else {
+                const n = parseInt(part);
+                if (!isNaN(n) && n >= 1 && n <= maxPages) pages.add(n - 1);
+            }
+        });
+        return Array.from(pages).sort((a, b) => a - b);
+    }
+
+    // ── Preview ──
+    async function runPreview() {
+        if (!pdfJsDoc) return;
+        const rangeStr = document.getElementById('pageRanges').value;
+        const pages = parsePageNumbers(rangeStr, totalPages);
+
+        if (pages.length === 0) {
+            showStatus("No valid pages in that range.", "error");
+            return;
+        }
+
+        const grid = document.getElementById('pagesGrid');
+        const emptyState = document.getElementById('emptyState');
+        const spinner = document.getElementById('loadingSpinner');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        grid.innerHTML = '';
+        emptyState.style.display = 'none';
+        spinner.style.display = 'flex';
+        downloadBtn.style.display = 'none';
+        document.getElementById('previewCount').textContent = '…';
+        showStatus("Rendering previews…", "info");
+
+        currentPreviewedPages = pages;
+
+        try {
+            for (let i = 0; i < pages.length; i++) {
+                const pageIndex = pages[i]; // 0-based
+                const page = await pdfJsDoc.getPage(pageIndex + 1); // pdf.js uses 1-based
+
+                const viewport = page.getViewport({ scale: 1 });
+                const scale = Math.min(300 / viewport.width, 400 / viewport.height);
+                const scaledViewport = page.getViewport({ scale });
+
+                const canvas = document.createElement('canvas');
+                canvas.width = scaledViewport.width;
+                canvas.height = scaledViewport.height;
+                const ctx = canvas.getContext('2d');
+
+                await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+
+                const thumb = document.createElement('div');
+                thumb.className = 'page-thumb';
+                thumb.style.animationDelay = `${i * 40}ms`;
+
+                const label = document.createElement('div');
+                label.className = 'page-num';
+                label.textContent = `Page ${pageIndex + 1}`;
+
+                thumb.appendChild(canvas);
+                thumb.appendChild(label);
+                grid.appendChild(thumb);
+            }
+
+            spinner.style.display = 'none';
+            document.getElementById('previewCount').textContent = `${pages.length} page${pages.length !== 1 ? 's' : ''}`;
+            showStatus(`${pages.length} page(s) previewed. Ready to download.`, "success");
+            downloadBtn.style.display = 'block';
+
+        } catch(err) {
+            spinner.style.display = 'none';
+            showStatus("Preview error: " + err.message, "error");
+        }
+    }
+
+    // ── Download / Process PDF ──
+    async function processPDF() {
+        if (!selectedFileBytes || currentPreviewedPages.length === 0) return;
+
+        const btn = document.getElementById('downloadBtn');
+        btn.disabled = true;
+        btn.textContent = "Processing…";
+        showStatus("Building PDF…", "info");
+
+        try {
+            const pdfDoc = await PDFDocument.load(selectedFileBytes);
+            const newPdf = await PDFDocument.create();
+            const copiedPages = await newPdf.copyPages(pdfDoc, currentPreviewedPages);
+            copiedPages.forEach(p => newPdf.addPage(p));
+            const pdfBytes = await newPdf.save();
+            downloadBlob(pdfBytes, `extracted_${selectedFileName}`);
+            showStatus("Done! Download started.", "success");
+        } catch(err) {
+            showStatus("Error: " + err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "⬇ Download PDF";
+        }
+    }
+
+    function downloadBlob(data, fileName) {
+        const blob = new Blob([data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click();
+        URL.revokeObjectURL(url); document.body.removeChild(a);
+    }
+
+    function showStatus(msg, type) {
+        const el = document.getElementById('statusMsg');
+        el.textContent = msg;
+        el.className = 'status-msg ' + type;
+    }
+</script>
+</body>
+</html>
