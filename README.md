@@ -1,46 +1,31 @@
-# 📄 PDF Squish
+# 🛠️ PDF Tools (On-Device)
 
-**PDF Squish** is a privacy-first, on-device PDF compressor that runs entirely in your web browser. Unlike traditional online tools, your documents are never uploaded to a server—all "squishing" happens locally on your machine.
+A suite of lightweight, privacy-focused PDF utilities that run entirely in your web browser. Your files are never uploaded to a server; all processing happens locally on your machine.
 
-## ✨ Features
+## 🚀 Included Tools
 
-* **100% Client-Side**: Your files stay on your device for maximum security.
-* **Real Compression**: Re-renders PDF pages at optimized quality levels.
-* **Three Quality Modes**: Choose between Light, Medium (Recommended), or High compression.
-* **Visual Metrics**: Displays original size, squished size, and total percentage saved.
-* **No Setup**: A single-file HTML solution that works in any modern browser.
+### 1. PDF Squish (Compressor)
+- **File:** `index.html`
+- **Function:** Re-renders PDF pages as optimized JPEGs to significantly reduce file size.
+- **Best for:** Reducing large PDFs for email or web uploads.
+- *Note: This tool flattens the PDF (text becomes non-selectable).*
 
-## 🛠️ How it Works
+### 2. PDF Extractor (Splitter)
+- **File:** `pdf-splitter.html`
+- **Function:** Preview and extract specific pages or ranges (e.g., 1-3, 5) into a new PDF.
+- **Best for:** Removing unnecessary pages or splitting a large document.
 
-The tool uses a "rendering" technique to reduce file size:
-1.  **Loading**: It uses `pdf.js` to read the original document.
-2.  **Rendering**: Each page is drawn onto an HTML5 canvas at a specific scale.
-3.  **Encoding**: The canvas is converted into an optimized JPEG image based on your chosen quality.
-4.  **Rebuilding**: `pdf-lib` gathers these images and packages them into a brand-new, smaller PDF.
+## ✨ Key Features
+- **100% Client-Side**: Powered by JavaScript. No data ever leaves your browser.
+- **Instant Preview**: See thumbnails of your pages before you process them.
+- **Zero Setup**: Works in any modern browser without installation.
 
-> [!IMPORTANT]
-> **Text Selectability**: Because this tool re-renders pages as images to achieve high compression, the resulting PDF will have "flattened" pages. This means text will no longer be selectable or searchable.
+## 🛠️ Built With
+- [pdf-lib](https://pdf-lib.js.org/) - For PDF manipulation and assembly.
+- [pdf.js](https://mozilla.github.io/pdf.js/) - For rendering and previewing PDF pages.
 
-## 🚀 Quick Start
+## ⚖️ License & Attribution
+This project is open-source under the MIT License. 
 
-1.  **Download** the `index.html` file from this repository.
-2.  **Open** the file in your preferred web browser.
-3.  **Drag and drop** your PDF and click **Squish It**.
-
-## 📚 Libraries Used
-
-* [pdf-lib](https://pdf-lib.js.org/) - For creating and modifying PDF documents.
-* [pdf.js](https://mozilla.github.io/pdf.js/) - For rendering PDF pages.
-* [Google Fonts](https://fonts.google.com/) - Using 'Syne' and 'DM Mono' for the interface.
-
-## ⚖️ License
-
-This project is open-source. Please ensure you comply with the licenses of the included third-party libraries (MIT and Apache 2.0).
-
-## ⚖️ Legal & Attribution
-
-This project is provided "as is" under the MIT License. It utilizes the following third-party libraries:
-
-- **pdf-lib**: Copyright (c) 2019 Andrew Dillon ([MIT License](https://github.com/Hopding/pdf-lib/blob/master/LICENSE.md))
-- **pdf.js**: Copyright (c) Mozilla Foundation ([Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0))
-- 
+- **pdf-lib**: Copyright (c) 2019 Andrew Dillon (MIT License)
+- **pdf.js**: Copyright (c) Mozilla Foundation (Apache License 2.0)
