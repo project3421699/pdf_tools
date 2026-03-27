@@ -1,0 +1,2617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDFForge — Browser PDF Toolkit</title>
+
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Industrial / Utilitarian Toolkit Aesthetic
+   Dark base, amber accents, monospaced data feel
+   ============================================================ */
+:root {
+  --bg-base:        #0d0d0f;
+  --bg-panel:       #141417;
+  --bg-card:        #1a1a1e;
+  --bg-hover:       #222228;
+  --bg-active:      #2a2a32;
+  --border:         #2a2a32;
+  --border-light:   #353540;
+  --amber:          #f5a623;
+  --amber-dim:      #c07a10;
+  --amber-glow:     rgba(245,166,35,0.12);
+  --amber-glow2:    rgba(245,166,35,0.25);
+  --red:            #e05050;
+  --green:          #50c878;
+  --blue:           #5090e0;
+  --text-primary:   #f0ede8;
+  --text-secondary: #8a8890;
+  --text-muted:     #55535e;
+  --font-display:   'Syne', sans-serif;
+  --font-mono:      'DM Mono', monospace;
+  --radius:         6px;
+  --radius-lg:      12px;
+  --shadow:         0 4px 24px rgba(0,0,0,0.5);
+  --transition:     0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  overflow: hidden;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app {
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+}
+
+/* TOP BAR */
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  z-index: 100;
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.topbar-logo .logo-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--amber);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #000;
+  font-weight: 800;
+}
+.topbar-logo span { color: var(--amber); }
+.topbar-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+.topbar-spacer { flex: 1; }
+.topbar-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+/* SIDEBAR */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 16px 16px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background var(--transition);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--amber-glow);
+  color: var(--amber);
+  border-left-color: var(--amber);
+}
+.nav-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.nav-item.active .nav-icon { background: var(--amber-glow2); }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* MAIN CONTENT */
+.main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+.tool-view {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  flex-direction: column;
+  gap: 20px;
+}
+.tool-view.active { display: flex; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================================
+   TOOL HEADER
+   ============================================================ */
+.tool-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tool-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.tool-title span { color: var(--amber); }
+.tool-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   CARDS & PANELS
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   DROP ZONE
+   ============================================================ */
+.drop-zone {
+  border: 2px dashed var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg-card);
+  position: relative;
+  overflow: hidden;
+}
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, var(--amber-glow) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--amber);
+}
+.drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
+.drop-zone-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  display: block;
+}
+.drop-zone-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.drop-zone-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+  background: var(--amber);
+  color: #000;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #ffc04a;
+  box-shadow: 0 0 20px var(--amber-glow2);
+}
+.btn-secondary {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-active); }
+.btn-danger {
+  background: rgba(224,80,80,0.15);
+  color: var(--red);
+  border: 1px solid rgba(224,80,80,0.3);
+}
+.btn-danger:hover:not(:disabled) { background: rgba(224,80,80,0.25); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-icon:hover { color: var(--text-primary); background: var(--bg-active); }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color var(--transition);
+  width: 100%;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-glow);
+}
+select option { background: var(--bg-panel); }
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-light);
+  outline: none;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+}
+input[type="color"] {
+  width: 36px;
+  height: 32px;
+  padding: 2px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+  background: var(--bg-panel);
+  cursor: pointer;
+}
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+.form-row .form-group { flex: 1; }
+
+/* ============================================================
+   PAGE GRID (thumbnails)
+   ============================================================ */
+.page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+.page-thumb {
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: grab;
+  transition: all var(--transition);
+  position: relative;
+}
+.page-thumb:hover { border-color: var(--amber-dim); }
+.page-thumb.selected { border-color: var(--amber); background: var(--amber-glow); }
+.page-thumb canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.page-thumb-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 5px;
+  background: var(--bg-panel);
+}
+.page-thumb-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.page-thumb:hover .page-thumb-actions { opacity: 1; }
+.page-thumb-check {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--amber);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #000;
+  font-weight: 800;
+}
+.page-thumb.selected .page-thumb-check { display: flex; }
+
+/* ============================================================
+   FILE LIST
+   ============================================================ */
+.file-list { display: flex; flex-direction: column; gap: 6px; }
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.file-item-icon { font-size: 16px; }
+.file-item-name { flex: 1; color: var(--text-primary); truncate: ellipsis; overflow: hidden; white-space: nowrap; }
+.file-item-size { color: var(--text-muted); font-size: 10px; }
+.file-item-remove {
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all var(--transition);
+}
+.file-item-remove:hover { color: var(--red); background: rgba(224,80,80,0.1); }
+
+/* ============================================================
+   LOADING OVERLAY
+   ============================================================ */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,15,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+.loading-overlay.active { display: flex; }
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: toastIn 0.25s ease;
+  min-width: 240px;
+  box-shadow: var(--shadow);
+  pointer-events: all;
+}
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+.toast.info    { border-left: 3px solid var(--blue); }
+@keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ============================================================
+   CANVAS / DRAWING TOOL
+   ============================================================ */
+.canvas-workspace {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.canvas-workspace canvas {
+  max-width: 100%;
+  cursor: crosshair;
+  display: block;
+}
+.draw-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+.draw-tool-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.draw-tool-btn.active, .draw-tool-btn:hover {
+  background: var(--amber-glow);
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+.draw-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--border-light);
+}
+
+/* ============================================================
+   TEXT AREA for PDF Creation
+   ============================================================ */
+textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   GRID LAYOUT HELPERS
+   ============================================================ */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-bar {
+  height: 3px;
+  background: var(--border-light);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--amber);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* ============================================================
+   BADGE
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+.badge-amber { background: var(--amber-glow2); color: var(--amber); }
+.badge-green { background: rgba(80,200,120,0.15); color: var(--green); }
+
+/* ============================================================
+   MOBILE BOTTOM NAV
+   ============================================================ */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-nav-inner {
+  display: flex;
+  min-width: max-content;
+  padding: 0 4px;
+}
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  transition: color var(--transition);
+  gap: 4px;
+  white-space: nowrap;
+}
+.mobile-nav-item.active { color: var(--amber); }
+.mobile-nav-icon { font-size: 18px; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .app {
+    grid-template-rows: 48px 1fr 60px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "main"
+      "mobilenav";
+  }
+  .sidebar { display: none; }
+  .mobile-nav { display: block; }
+  .tool-view { padding: 16px; padding-bottom: 70px; }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .page-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .tool-title { font-size: 18px; }
+  .btn { font-size: 12px; padding: 8px 14px; }
+}
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ============================================================
+   ANNOTATION LAYER
+   ============================================================ */
+.annotation-preview-wrap {
+  position: relative;
+  display: inline-block;
+}
+.annotation-preview-wrap canvas { display: block; }
+#annotationCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   CROP TOOL
+   ============================================================ */
+.crop-overlay {
+  position: absolute;
+  border: 2px dashed var(--amber);
+  cursor: move;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOADING OVERLAY
+     ============================================================ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Processing...</div>
+  <div class="progress-bar" style="width:200px">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-icon">⬛</div>
+      PDF<span>Forge</span>
+      <div class="topbar-subtitle">browser toolkit</div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-status">
+      <div class="status-dot"></div>
+      offline-ready
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section-label">Convert</div>
+    <div class="nav-item active" data-tool="img2pdf">
+      <div class="nav-icon">🖼️</div>Images → PDF
+    </div>
+    <div class="nav-item" data-tool="pdf2img">
+      <div class="nav-icon">📄</div>PDF → Images
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section-label">Manage</div>
+    <div class="nav-item" data-tool="merge">
+      <div class="nav-icon">🔗</div>Merge PDFs
+    </div>
+    <div class="nav-item" data-tool="split">
+      <div class="nav-icon">✂️</div>Split PDF
+    </div>
+    <div class="nav-item" data-tool="reorder">
+      <div class="nav-icon">⇅</div>Reorder / Delete
+    </div>
+    <div class="nav-item" data-tool="rotate">
+      <div class="nav-icon">🔄</div>Rotate Pages
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section-label">Create &amp; Edit</div>
+    <div class="nav-item" data-tool="create">
+      <div class="nav-icon">📝</div>Create from Text
+    </div>
+    <div class="nav-item" data-tool="annotate">
+      <div class="nav-icon">🖊️</div>Annotate / Draw
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section-label">Customize</div>
+    <div class="nav-item" data-tool="pagenums">
+      <div class="nav-icon">🔢</div>Page Numbers
+    </div>
+    <div class="nav-item" data-tool="watermark">
+      <div class="nav-icon">💧</div>Watermark
+    </div>
+    <div class="nav-item" data-tool="pagesize">
+      <div class="nav-icon">📐</div>Page Size
+    </div>
+    <div class="sidebar-footer">
+      PDFForge v1.0<br>
+      Runs 100% in-browser<br>
+      No data leaves your device
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ====================================================
+         TOOL: Images → PDF
+         ==================================================== -->
+    <div class="tool-view active" id="tool-img2pdf">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Images <span>→</span> PDF</div>
+          <div class="tool-desc">// combine JPG/PNG files into a single PDF document</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="img2pdfDrop">
+        <input type="file" id="img2pdfInput" multiple accept="image/jpeg,image/png,image/webp">
+        <span class="drop-zone-icon">🖼️</span>
+        <div class="drop-zone-title">Drop images here or click to browse</div>
+        <div class="drop-zone-sub">JPG, PNG, WEBP — multiple files supported</div>
+      </div>
+      <div id="img2pdfList" class="file-list"></div>
+      <div class="card" id="img2pdfOptions" style="display:none">
+        <div class="card-title">Options</div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Page Size</label>
+            <select id="img2pdfPageSize">
+              <option value="a4">A4 (210×297mm)</option>
+              <option value="letter">Letter (8.5×11in)</option>
+              <option value="fit">Fit to Image</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Image Fit</label>
+            <select id="img2pdfFit">
+              <option value="contain">Contain (letterbox)</option>
+              <option value="fill">Fill (stretch)</option>
+              <option value="cover">Cover (crop)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="img2pdfBtn" disabled>⬇ Convert & Download</button>
+        <button class="btn btn-secondary" id="img2pdfClear">Clear</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: PDF → Images
+         ==================================================== -->
+    <div class="tool-view" id="tool-pdf2img">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">PDF <span>→</span> Images</div>
+          <div class="tool-desc">// export PDF pages as PNG image files</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="pdf2imgDrop">
+        <input type="file" id="pdf2imgInput" accept=".pdf">
+        <span class="drop-zone-icon">📄</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+        <div class="drop-zone-sub">One PDF file at a time</div>
+      </div>
+      <div class="card" id="pdf2imgOptions" style="display:none">
+        <div class="card-title">Options</div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Resolution (DPI)</label>
+            <select id="pdf2imgDPI">
+              <option value="1">72 DPI (screen)</option>
+              <option value="2" selected>144 DPI (default)</option>
+              <option value="3">216 DPI (high quality)</option>
+              <option value="4">288 DPI (print)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Page Range</label>
+            <input type="text" id="pdf2imgRange" placeholder="e.g. 1-3, 5, 7-9 or blank for all">
+          </div>
+        </div>
+      </div>
+      <div id="pdf2imgPreviews" class="page-grid"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="pdf2imgBtn" disabled>🖼 Export Pages</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Merge PDFs
+         ==================================================== -->
+    <div class="tool-view" id="tool-merge">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Merge <span>PDFs</span></div>
+          <div class="tool-desc">// combine multiple PDF files into one</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="mergeDrop">
+        <input type="file" id="mergeInput" multiple accept=".pdf">
+        <span class="drop-zone-icon">🔗</span>
+        <div class="drop-zone-title">Drop PDF files here or click to browse</div>
+        <div class="drop-zone-sub">Multiple PDFs — will be merged in list order</div>
+      </div>
+      <div id="mergeList" class="file-list"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="mergeBtn" disabled>🔗 Merge & Download</button>
+        <button class="btn btn-secondary" id="mergeClear">Clear</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Split PDF
+         ==================================================== -->
+    <div class="tool-view" id="tool-split">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Split <span>PDF</span></div>
+          <div class="tool-desc">// extract page ranges as separate PDF files</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="splitDrop">
+        <input type="file" id="splitInput" accept=".pdf">
+        <span class="drop-zone-icon">✂️</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+        <div class="drop-zone-sub">One PDF file</div>
+      </div>
+      <div class="card" id="splitOptions" style="display:none">
+        <div class="card-title">Split Options</div>
+        <div class="form-group">
+          <label class="form-label">Page Ranges (one per line)</label>
+          <textarea id="splitRanges" placeholder="1-3&#10;4-6&#10;7&#10;8-10&#10;&#10;Each line = one output PDF"></textarea>
+        </div>
+        <div id="splitPageInfo" style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:8px"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="splitBtn" disabled>✂️ Split & Download</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Reorder / Delete Pages
+         ==================================================== -->
+    <div class="tool-view" id="tool-reorder">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Reorder <span>&amp;</span> Delete</div>
+          <div class="tool-desc">// drag to reorder, click to select for deletion</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="reorderDrop">
+        <input type="file" id="reorderInput" accept=".pdf">
+        <span class="drop-zone-icon">⇅</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+        <div class="drop-zone-sub">Pages will render as thumbnails for reordering</div>
+      </div>
+      <div id="reorderGrid" class="page-grid" style="display:none"></div>
+      <div class="btn-row" id="reorderActions" style="display:none">
+        <button class="btn btn-primary" id="reorderSaveBtn">⬇ Save Changes</button>
+        <button class="btn btn-danger" id="reorderDeleteBtn">🗑 Delete Selected</button>
+        <button class="btn btn-secondary btn-sm" id="reorderSelectAll">Select All</button>
+        <button class="btn btn-secondary btn-sm" id="reorderDeselectAll">Deselect</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Rotate Pages
+         ==================================================== -->
+    <div class="tool-view" id="tool-rotate">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Rotate <span>Pages</span></div>
+          <div class="tool-desc">// rotate individual or all pages</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="rotateDrop">
+        <input type="file" id="rotateInput" accept=".pdf">
+        <span class="drop-zone-icon">🔄</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+      </div>
+      <div id="rotateGrid" class="page-grid" style="display:none"></div>
+      <div class="btn-row" id="rotateActions" style="display:none">
+        <button class="btn btn-secondary" id="rotateCW">↻ Rotate CW (Selected)</button>
+        <button class="btn btn-secondary" id="rotateCCW">↺ Rotate CCW (Selected)</button>
+        <button class="btn btn-secondary" id="rotateAllCW">↻ All CW</button>
+        <button class="btn btn-secondary" id="rotateAllCCW">↺ All CCW</button>
+        <button class="btn btn-primary" id="rotateSaveBtn">⬇ Save & Download</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Create PDF from Text
+         ==================================================== -->
+    <div class="tool-view" id="tool-create">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Create <span>from Text</span></div>
+          <div class="tool-desc">// build a PDF from plain text or add images</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-title">Text Content</div>
+            <div class="form-group">
+              <textarea id="createText" rows="10" placeholder="Enter your text here...&#10;&#10;You can use multiple paragraphs.&#10;Each blank line creates a new paragraph."></textarea>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Add Images</div>
+            <div class="drop-zone" style="padding:20px">
+              <input type="file" id="createImgInput" multiple accept="image/*">
+              <span class="drop-zone-icon" style="font-size:24px">🖼️</span>
+              <div class="drop-zone-title" style="font-size:13px">Add images to PDF</div>
+            </div>
+            <div id="createImgList" class="file-list" style="margin-top:8px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Page Settings</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Page Size</label>
+              <select id="createPageSize">
+                <option value="A4">A4</option>
+                <option value="Letter">Letter</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Size</label>
+              <input type="number" id="createFontSize" value="12" min="6" max="72">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Title (optional)</label>
+              <input type="text" id="createTitle" placeholder="Document title">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Margin (pts)</label>
+              <input type="number" id="createMargin" value="40" min="10" max="100">
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary" id="createBtn">📄 Create PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Annotate / Draw
+         ==================================================== -->
+    <div class="tool-view" id="tool-annotate">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Annotate <span>&amp; Draw</span></div>
+          <div class="tool-desc">// add text overlays and freehand drawings to PDF pages</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="annotateDrop" style="display:block">
+        <input type="file" id="annotateInput" accept=".pdf">
+        <span class="drop-zone-icon">🖊️</span>
+        <div class="drop-zone-title">Drop a PDF here to annotate</div>
+        <div class="drop-zone-sub">Start with a PDF or draw on a blank canvas</div>
+      </div>
+      <div id="annotateWorkspace" style="display:none">
+        <div class="two-col" style="align-items:start">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <!-- Page selector -->
+            <div class="card">
+              <div class="card-title">Page</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Go to page</label>
+                  <input type="number" id="annotatePageNum" value="1" min="1">
+                </div>
+                <button class="btn btn-secondary" id="annotateGoPage" style="margin-bottom:0">Go</button>
+              </div>
+              <div id="annotatePageInfo" style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px"></div>
+            </div>
+            <!-- Draw toolbar -->
+            <div class="draw-toolbar">
+              <div class="draw-tool-btn active" id="drawModeDraw" title="Draw">✏️ Draw</div>
+              <div class="draw-tool-btn" id="drawModeText" title="Text">T Text</div>
+              <div class="draw-tool-btn" id="drawModeErase" title="Eraser">⬜ Erase</div>
+              <div class="draw-sep"></div>
+              <input type="color" id="drawColor" value="#f5a623" title="Color">
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:80px">
+                <label class="form-label">Brush</label>
+                <input type="range" id="brushSize" min="1" max="40" value="4">
+              </div>
+              <div class="draw-sep"></div>
+              <button class="btn btn-secondary btn-sm" id="drawUndo">↩ Undo</button>
+              <button class="btn btn-secondary btn-sm" id="drawRedo">↪ Redo</button>
+              <button class="btn btn-danger btn-sm" id="drawClear">🗑 Clear</button>
+            </div>
+            <!-- Text overlay input -->
+            <div class="card" id="textOverlayCard" style="display:none">
+              <div class="card-title">Text Overlay</div>
+              <div class="form-group">
+                <input type="text" id="overlayText" placeholder="Text to add...">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Size</label>
+                  <input type="number" id="overlayFontSize" value="18" min="6" max="120">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Color</label>
+                  <input type="color" id="overlayColor" value="#000000">
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:6px">
+                <label class="form-label">Click canvas to place text</label>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="canvas-workspace" id="annotateCanvasWrap">
+              <canvas id="annotateBaseCanvas"></canvas>
+              <canvas id="annotateDrawCanvas" style="position:absolute;top:0;left:0;cursor:crosshair"></canvas>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="annotateSaveBtn">⬇ Save Annotated PDF</button>
+              <button class="btn btn-secondary" id="annotateNextPage">Next Page →</button>
+              <button class="btn btn-secondary" id="annotatePrevPage">← Prev</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row" id="annotateBlankRow">
+        <button class="btn btn-secondary" id="annotateBlankBtn">📄 Start with Blank Canvas</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Page Numbers
+         ==================================================== -->
+    <div class="tool-view" id="tool-pagenums">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Add Page <span>Numbers</span></div>
+          <div class="tool-desc">// stamp page numbers onto every page</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="pagenumsDrop">
+        <input type="file" id="pagenumsInput" accept=".pdf">
+        <span class="drop-zone-icon">🔢</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+      </div>
+      <div class="card" id="pagenumsOptions" style="display:none">
+        <div class="card-title">Settings</div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Position</label>
+            <select id="pagenumPos">
+              <option value="bottom-center">Bottom Center</option>
+              <option value="bottom-right">Bottom Right</option>
+              <option value="bottom-left">Bottom Left</option>
+              <option value="top-center">Top Center</option>
+              <option value="top-right">Top Right</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Start Number</label>
+            <input type="number" id="pagenumStart" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Format</label>
+            <select id="pagenumFormat">
+              <option value="n">1, 2, 3...</option>
+              <option value="page-n">Page 1, Page 2...</option>
+              <option value="n-of-total">1 of 10, 2 of 10...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Font Size</label>
+            <input type="number" id="pagenumSize" value="11" min="6" max="36">
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="pagenumsBtn" disabled>🔢 Add Numbers & Download</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Watermark
+         ==================================================== -->
+    <div class="tool-view" id="tool-watermark">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Add <span>Watermark</span></div>
+          <div class="tool-desc">// stamp diagonal text watermark on all pages</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="watermarkDrop">
+        <input type="file" id="watermarkInput" accept=".pdf">
+        <span class="drop-zone-icon">💧</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+      </div>
+      <div class="card" id="watermarkOptions" style="display:none">
+        <div class="card-title">Watermark Settings</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Watermark Text</label>
+            <input type="text" id="watermarkText" value="CONFIDENTIAL">
+          </div>
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label">Font Size</label>
+              <input type="number" id="watermarkSize" value="60" min="10" max="200">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Opacity (0-100)</label>
+              <input type="number" id="watermarkOpacity" value="20" min="5" max="100">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Angle (degrees)</label>
+            <input type="number" id="watermarkAngle" value="-45" min="-90" max="90">
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="watermarkBtn" disabled>💧 Apply & Download</button>
+      </div>
+    </div>
+
+    <!-- ====================================================
+         TOOL: Page Size
+         ==================================================== -->
+    <div class="tool-view" id="tool-pagesize">
+      <div class="tool-header">
+        <div>
+          <div class="tool-title">Change <span>Page Size</span></div>
+          <div class="tool-desc">// resize all pages to A4 or Letter format</div>
+        </div>
+      </div>
+      <div class="drop-zone" id="pagesizeDrop">
+        <input type="file" id="pagesizeInput" accept=".pdf">
+        <span class="drop-zone-icon">📐</span>
+        <div class="drop-zone-title">Drop a PDF here or click to browse</div>
+      </div>
+      <div class="card" id="pagesizeOptions" style="display:none">
+        <div class="card-title">Target Page Size</div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Format</label>
+            <select id="pagesizeFormat">
+              <option value="a4">A4 (210×297mm)</option>
+              <option value="letter">US Letter (8.5×11in)</option>
+              <option value="legal">US Legal (8.5×14in)</option>
+              <option value="a3">A3 (297×420mm)</option>
+              <option value="a5">A5 (148×210mm)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content Fit</label>
+            <select id="pagesizeFit">
+              <option value="scale">Scale to fit</option>
+              <option value="center">Center (no scale)</option>
+              <option value="crop">Crop to fit</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="pagesizeBtn" disabled>📐 Resize & Download</button>
+      </div>
+    </div>
+
+  </main><!-- /main -->
+
+  <!-- MOBILE BOTTOM NAV (rendered via JS) -->
+  <nav class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-inner" id="mobileNavInner"></div>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ============================================================
+     JAVASCRIPT MODULES
+     ============================================================ -->
+<script>
+// ============================================================
+// MODULE: PDF.js Configuration
+// ============================================================
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ============================================================
+// MODULE: State
+// ============================================================
+const State = {
+  // img2pdf
+  img2pdfFiles: [],
+  // pdf2img
+  pdf2imgFile: null,
+  // merge
+  mergeFiles: [],
+  // split
+  splitFile: null, splitPageCount: 0,
+  // reorder
+  reorderFile: null, reorderOrder: [], reorderSelected: new Set(), reorderRotations: {},
+  // rotate
+  rotateFile: null, rotateOrder: [], rotateSelected: new Set(), rotateAngles: {},
+  // annotate
+  annotateFile: null, annotatePDF: null, annotateCurrentPage: 1, annotatePageCount: 0,
+  annotateDrawings: {}, // page -> ImageData
+  annotateHistory: [], annotateRedoStack: [],
+  annotateMode: 'draw', // 'draw'|'text'|'erase'
+  annotateIsDrawing: false, annotateLastX: 0, annotateLastY: 0,
+  // create
+  createImages: [],
+  // pagesize
+  pagesizeFile: null,
+  // pagenums
+  pagenumsFile: null,
+  // watermark
+  watermarkFile: null,
+};
+
+// ============================================================
+// MODULE: UI Utilities
+// ============================================================
+const UI = {
+  showLoading(msg = 'Processing...') {
+    document.getElementById('loadingOverlay').classList.add('active');
+    document.getElementById('loadingText').textContent = msg;
+    document.getElementById('progressFill').style.width = '0%';
+  },
+  hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+  },
+  setProgress(pct) {
+    document.getElementById('progressFill').style.width = pct + '%';
+  },
+  toast(msg, type = 'info') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  },
+  formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
+  },
+  async fileToArrayBuffer(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsArrayBuffer(file);
+    });
+  },
+  async fileToDataURL(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  },
+  downloadBytes(bytes, filename) {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+  downloadCanvas(canvas, filename) {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    a.click();
+  },
+};
+
+// ============================================================
+// MODULE: Navigation
+// ============================================================
+const navItems = [
+  { id: 'img2pdf',  icon: '🖼️',  label: 'Img→PDF' },
+  { id: 'pdf2img',  icon: '📄',  label: 'PDF→Img' },
+  { id: 'merge',    icon: '🔗',  label: 'Merge' },
+  { id: 'split',    icon: '✂️',  label: 'Split' },
+  { id: 'reorder',  icon: '⇅',   label: 'Reorder' },
+  { id: 'rotate',   icon: '🔄',  label: 'Rotate' },
+  { id: 'create',   icon: '📝',  label: 'Create' },
+  { id: 'annotate', icon: '🖊️', label: 'Draw' },
+  { id: 'pagenums', icon: '🔢',  label: 'Nums' },
+  { id: 'watermark',icon: '💧',  label: 'Watermark' },
+  { id: 'pagesize', icon: '📐',  label: 'Resize' },
+];
+
+function initNav() {
+  // Build mobile nav
+  const inner = document.getElementById('mobileNavInner');
+  navItems.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'mobile-nav-item' + (n.id === 'img2pdf' ? ' active' : '');
+    el.dataset.tool = n.id;
+    el.innerHTML = `<span class="mobile-nav-icon">${n.icon}</span><span>${n.label}</span>`;
+    inner.appendChild(el);
+  });
+
+  // Sidebar nav
+  document.querySelectorAll('.nav-item[data-tool]').forEach(el => {
+    el.addEventListener('click', () => switchTool(el.dataset.tool));
+  });
+  document.querySelectorAll('.mobile-nav-item[data-tool]').forEach(el => {
+    el.addEventListener('click', () => switchTool(el.dataset.tool));
+  });
+}
+
+function switchTool(toolId) {
+  document.querySelectorAll('.tool-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(v => v.classList.remove('active'));
+  document.getElementById('tool-' + toolId)?.classList.add('active');
+  document.querySelector(`.nav-item[data-tool="${toolId}"]`)?.classList.add('active');
+  document.querySelector(`.mobile-nav-item[data-tool="${toolId}"]`)?.classList.add('active');
+}
+
+// ============================================================
+// MODULE: Drop Zone Helper
+// ============================================================
+function initDropZone(dropEl, inputEl, onFiles) {
+  dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('drag-over'); });
+  dropEl.addEventListener('dragleave', () => dropEl.classList.remove('drag-over'));
+  dropEl.addEventListener('drop', e => {
+    e.preventDefault();
+    dropEl.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) onFiles(Array.from(e.dataTransfer.files));
+  });
+  inputEl.addEventListener('change', () => {
+    if (inputEl.files.length) onFiles(Array.from(inputEl.files));
+    inputEl.value = '';
+  });
+}
+
+function makeFileItem(file, onRemove) {
+  const div = document.createElement('div');
+  div.className = 'file-item';
+  const icon = file.type === 'application/pdf' ? '📄' : '🖼️';
+  div.innerHTML = `
+    <span class="file-item-icon">${icon}</span>
+    <span class="file-item-name" title="${file.name}">${file.name}</span>
+    <span class="file-item-size">${UI.formatBytes(file.size)}</span>
+    <span class="file-item-remove" title="Remove">✕</span>
+  `;
+  div.querySelector('.file-item-remove').addEventListener('click', onRemove);
+  return div;
+}
+
+// ============================================================
+// MODULE: PDF.js Render Helper
+// ============================================================
+async function renderPageToCanvas(pdfDoc, pageNum, scale = 1) {
+  const page = await pdfDoc.getPage(pageNum);
+  const vp = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = vp.width;
+  canvas.height = vp.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  return canvas;
+}
+
+async function renderPagesAsThumbs(file, container, clickCb, scale = 0.3) {
+  container.innerHTML = '';
+  const ab = await UI.fileToArrayBuffer(file);
+  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const canvas = await renderPageToCanvas(pdf, i, scale);
+    const thumb = document.createElement('div');
+    thumb.className = 'page-thumb';
+    thumb.dataset.page = i;
+    thumb.innerHTML = `<div class="page-thumb-check">✓</div>`;
+    thumb.appendChild(canvas);
+    thumb.innerHTML += `<div class="page-thumb-label">Page ${i}</div>`;
+    thumb.querySelector('canvas').style.pointerEvents = 'none';
+    if (clickCb) thumb.addEventListener('click', () => clickCb(thumb, i));
+    container.appendChild(thumb);
+  }
+  return pdf;
+}
+
+// ============================================================
+// MODULE: Parse Page Range String
+// ============================================================
+function parseRangeString(str, total) {
+  const pages = new Set();
+  const parts = str.split(',').map(s => s.trim()).filter(Boolean);
+  for (const p of parts) {
+    if (p.includes('-')) {
+      let [a, b] = p.split('-').map(Number);
+      if (!b) b = total;
+      a = Math.max(1, a); b = Math.min(total, b);
+      for (let i = a; i <= b; i++) pages.add(i);
+    } else {
+      const n = parseInt(p);
+      if (n >= 1 && n <= total) pages.add(n);
+    }
+  }
+  return [...pages].sort((a, b) => a - b);
+}
+
+// ============================================================
+// MODULE: Images → PDF
+// ============================================================
+function initImg2PDF() {
+  const drop = document.getElementById('img2pdfDrop');
+  const input = document.getElementById('img2pdfInput');
+  const list = document.getElementById('img2pdfList');
+  const opts = document.getElementById('img2pdfOptions');
+  const btn = document.getElementById('img2pdfBtn');
+  const clearBtn = document.getElementById('img2pdfClear');
+
+  function refresh() {
+    list.innerHTML = '';
+    State.img2pdfFiles.forEach((f, idx) => {
+      const item = makeFileItem(f, () => {
+        State.img2pdfFiles.splice(idx, 1);
+        refresh();
+      });
+      list.appendChild(item);
+    });
+    const has = State.img2pdfFiles.length > 0;
+    btn.disabled = !has;
+    opts.style.display = has ? 'block' : 'none';
+  }
+
+  initDropZone(drop, input, files => {
+    const imgs = files.filter(f => f.type.startsWith('image/'));
+    State.img2pdfFiles.push(...imgs);
+    refresh();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    State.img2pdfFiles = [];
+    refresh();
+  });
+
+  btn.addEventListener('click', async () => {
+    try {
+      UI.showLoading('Creating PDF from images...');
+      const pageSize = document.getElementById('img2pdfPageSize').value;
+      const fit = document.getElementById('img2pdfFit').value;
+      const { PDFDocument } = PDFLib;
+      const pdf = await PDFDocument.create();
+
+      const A4 = [595, 842];
+      const LETTER = [612, 792];
+
+      for (let i = 0; i < State.img2pdfFiles.length; i++) {
+        UI.setProgress(Math.round((i / State.img2pdfFiles.length) * 90));
+        const f = State.img2pdfFiles[i];
+        const ab = await UI.fileToArrayBuffer(f);
+        let img;
+        if (f.type === 'image/png') img = await pdf.embedPng(ab);
+        else img = await pdf.embedJpg(ab);
+
+        const [iw, ih] = [img.width, img.height];
+        let pw, ph;
+        if (pageSize === 'fit') {
+          pw = iw; ph = ih;
+        } else if (pageSize === 'a4') {
+          [pw, ph] = A4;
+        } else {
+          [pw, ph] = LETTER;
+        }
+
+        const page = pdf.addPage([pw, ph]);
+        let sx = pw / iw, sy = ph / ih, scale;
+        if (fit === 'contain') scale = Math.min(sx, sy);
+        else if (fit === 'fill')  scale = 1; // stretch
+        else scale = Math.max(sx, sy); // cover
+
+        const dw = fit === 'fill' ? pw : iw * scale;
+        const dh = fit === 'fill' ? ph : ih * scale;
+        const dx = (pw - dw) / 2;
+        const dy = (ph - dh) / 2;
+        page.drawImage(img, { x: dx, y: dy, width: dw, height: dh });
+      }
+      UI.setProgress(100);
+      const bytes = await pdf.save();
+      UI.downloadBytes(bytes, 'images-to-pdf.pdf');
+      UI.toast('PDF created successfully!', 'success');
+    } catch (e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: PDF → Images
+// ============================================================
+function initPDF2Img() {
+  const drop = document.getElementById('pdf2imgDrop');
+  const input = document.getElementById('pdf2imgInput');
+  const opts = document.getElementById('pdf2imgOptions');
+  const previews = document.getElementById('pdf2imgPreviews');
+  const btn = document.getElementById('pdf2imgBtn');
+
+  initDropZone(drop, input, async files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return UI.toast('Please select a PDF file', 'error');
+    State.pdf2imgFile = f;
+    opts.style.display = 'block';
+    btn.disabled = false;
+    previews.innerHTML = `<div style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">📄 ${f.name} — ${UI.formatBytes(f.size)} loaded. Click Export to render pages.</div>`;
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!State.pdf2imgFile) return;
+    try {
+      UI.showLoading('Rendering PDF pages...');
+      previews.innerHTML = '';
+      const ab = await UI.fileToArrayBuffer(State.pdf2imgFile);
+      const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+      const scale = parseFloat(document.getElementById('pdf2imgDPI').value);
+      const rangeStr = document.getElementById('pdf2imgRange').value.trim();
+      const total = pdf.numPages;
+      const pages = rangeStr ? parseRangeString(rangeStr, total) : Array.from({length: total}, (_, i) => i + 1);
+
+      for (let i = 0; i < pages.length; i++) {
+        UI.setProgress(Math.round((i / pages.length) * 100));
+        const pageNum = pages[i];
+        const canvas = await renderPageToCanvas(pdf, pageNum, scale);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'page-thumb';
+        wrap.style.cursor = 'pointer';
+        wrap.innerHTML = `<div class="page-thumb-label">Page ${pageNum} — click to download</div>`;
+        wrap.prepend(canvas);
+        wrap.addEventListener('click', () => {
+          UI.downloadCanvas(canvas, `page-${pageNum}.png`);
+          UI.toast(`Page ${pageNum} downloaded!`, 'success');
+        });
+        previews.appendChild(wrap);
+      }
+      UI.toast(`${pages.length} page(s) rendered. Click to download.`, 'success');
+    } catch (e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Merge PDFs
+// ============================================================
+function initMerge() {
+  const drop = document.getElementById('mergeDrop');
+  const input = document.getElementById('mergeInput');
+  const list = document.getElementById('mergeList');
+  const btn = document.getElementById('mergeBtn');
+  const clearBtn = document.getElementById('mergeClear');
+
+  function refresh() {
+    list.innerHTML = '';
+    State.mergeFiles.forEach((f, idx) => {
+      const item = makeFileItem(f, () => {
+        State.mergeFiles.splice(idx, 1);
+        refresh();
+      });
+      list.appendChild(item);
+    });
+    btn.disabled = State.mergeFiles.length < 2;
+  }
+
+  initDropZone(drop, input, files => {
+    State.mergeFiles.push(...files.filter(f => f.name.endsWith('.pdf')));
+    refresh();
+  });
+
+  clearBtn.addEventListener('click', () => { State.mergeFiles = []; refresh(); });
+
+  // SortableJS for merge list
+  new Sortable(list, {
+    animation: 150,
+    ghostClass: 'bg-hover',
+    onEnd: (evt) => {
+      const item = State.mergeFiles.splice(evt.oldIndex, 1)[0];
+      State.mergeFiles.splice(evt.newIndex, 0, item);
+    }
+  });
+
+  btn.addEventListener('click', async () => {
+    try {
+      UI.showLoading('Merging PDFs...');
+      const { PDFDocument } = PDFLib;
+      const merged = await PDFDocument.create();
+      for (let i = 0; i < State.mergeFiles.length; i++) {
+        UI.setProgress(Math.round((i / State.mergeFiles.length) * 90));
+        const ab = await UI.fileToArrayBuffer(State.mergeFiles[i]);
+        const src = await PDFDocument.load(ab);
+        const pages = await merged.copyPages(src, src.getPageIndices());
+        pages.forEach(p => merged.addPage(p));
+      }
+      UI.setProgress(100);
+      const bytes = await merged.save();
+      UI.downloadBytes(bytes, 'merged.pdf');
+      UI.toast('PDFs merged successfully!', 'success');
+    } catch (e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Split PDF
+// ============================================================
+function initSplit() {
+  const drop = document.getElementById('splitDrop');
+  const input = document.getElementById('splitInput');
+  const opts = document.getElementById('splitOptions');
+  const btn = document.getElementById('splitBtn');
+
+  initDropZone(drop, input, async files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return;
+    State.splitFile = f;
+    // Get page count
+    const ab = await UI.fileToArrayBuffer(f);
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    State.splitPageCount = pdf.numPages;
+    opts.style.display = 'block';
+    btn.disabled = false;
+    document.getElementById('splitPageInfo').textContent = `📄 ${f.name} — ${State.splitPageCount} pages`;
+    document.getElementById('splitRanges').placeholder = `e.g.\n1-3\n4-6\n7-${State.splitPageCount}\n\nEach line = separate PDF`;
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!State.splitFile) return;
+    const rangesText = document.getElementById('splitRanges').value.trim();
+    if (!rangesText) return UI.toast('Enter page ranges to split', 'error');
+
+    const rangeLines = rangesText.split('\n').map(s => s.trim()).filter(Boolean);
+    try {
+      UI.showLoading('Splitting PDF...');
+      const { PDFDocument } = PDFLib;
+      const ab = await UI.fileToArrayBuffer(State.splitFile);
+      const src = await PDFDocument.load(ab);
+
+      for (let i = 0; i < rangeLines.length; i++) {
+        UI.setProgress(Math.round((i / rangeLines.length) * 100));
+        const pages = parseRangeString(rangeLines[i], State.splitPageCount);
+        if (!pages.length) continue;
+
+        const out = await PDFDocument.create();
+        const copied = await out.copyPages(src, pages.map(p => p - 1));
+        copied.forEach(p => out.addPage(p));
+        const bytes = await out.save();
+        UI.downloadBytes(bytes, `split-${rangeLines[i].replace(/\s/g,'')}.pdf`);
+        await new Promise(r => setTimeout(r, 200));
+      }
+      UI.toast(`Split into ${rangeLines.length} PDF(s)!`, 'success');
+    } catch (e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Reorder & Delete Pages
+// ============================================================
+function initReorder() {
+  const drop = document.getElementById('reorderDrop');
+  const input = document.getElementById('reorderInput');
+  const grid = document.getElementById('reorderGrid');
+  const actions = document.getElementById('reorderActions');
+
+  let sortable;
+
+  initDropZone(drop, input, async files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return;
+    State.reorderFile = f;
+    State.reorderSelected.clear();
+    UI.showLoading('Rendering pages...');
+    try {
+      grid.style.display = 'grid';
+      actions.style.display = 'flex';
+      const ab = await UI.fileToArrayBuffer(f);
+      const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+      const total = pdf.numPages;
+      State.reorderOrder = Array.from({length: total}, (_, i) => i + 1);
+      grid.innerHTML = '';
+
+      for (let i = 1; i <= total; i++) {
+        UI.setProgress(Math.round((i / total) * 100));
+        const canvas = await renderPageToCanvas(pdf, i, 0.25);
+        const thumb = document.createElement('div');
+        thumb.className = 'page-thumb';
+        thumb.dataset.page = i;
+        thumb.innerHTML = `<div class="page-thumb-check">✓</div>`;
+        thumb.appendChild(canvas);
+        thumb.innerHTML += `<div class="page-thumb-label">Page ${i}</div>`;
+        thumb.addEventListener('click', () => {
+          if (State.reorderSelected.has(i)) {
+            State.reorderSelected.delete(i);
+            thumb.classList.remove('selected');
+          } else {
+            State.reorderSelected.add(i);
+            thumb.classList.add('selected');
+          }
+        });
+        grid.appendChild(thumb);
+      }
+
+      if (sortable) sortable.destroy();
+      sortable = new Sortable(grid, {
+        animation: 150,
+        onEnd: () => {
+          State.reorderOrder = [...grid.querySelectorAll('.page-thumb')].map(t => parseInt(t.dataset.page));
+        }
+      });
+    } catch(e) {
+      UI.toast('Error loading PDF: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+
+  document.getElementById('reorderSelectAll').addEventListener('click', () => {
+    grid.querySelectorAll('.page-thumb').forEach(t => {
+      t.classList.add('selected');
+      State.reorderSelected.add(parseInt(t.dataset.page));
+    });
+  });
+  document.getElementById('reorderDeselectAll').addEventListener('click', () => {
+    grid.querySelectorAll('.page-thumb').forEach(t => t.classList.remove('selected'));
+    State.reorderSelected.clear();
+  });
+
+  document.getElementById('reorderDeleteBtn').addEventListener('click', () => {
+    if (!State.reorderSelected.size) return UI.toast('Select pages to delete', 'info');
+    grid.querySelectorAll('.page-thumb').forEach(t => {
+      if (State.reorderSelected.has(parseInt(t.dataset.page))) t.remove();
+    });
+    State.reorderOrder = State.reorderOrder.filter(p => !State.reorderSelected.has(p));
+    State.reorderSelected.clear();
+    UI.toast('Pages removed from view. Save to apply.', 'info');
+  });
+
+  document.getElementById('reorderSaveBtn').addEventListener('click', async () => {
+    if (!State.reorderFile) return;
+    const currentOrder = [...grid.querySelectorAll('.page-thumb')].map(t => parseInt(t.dataset.page));
+    if (!currentOrder.length) return UI.toast('No pages remaining', 'error');
+    try {
+      UI.showLoading('Saving reordered PDF...');
+      const { PDFDocument } = PDFLib;
+      const ab = await UI.fileToArrayBuffer(State.reorderFile);
+      const src = await PDFDocument.load(ab);
+      const out = await PDFDocument.create();
+      const copied = await out.copyPages(src, currentOrder.map(p => p - 1));
+      copied.forEach(p => out.addPage(p));
+      const bytes = await out.save();
+      UI.downloadBytes(bytes, 'reordered.pdf');
+      UI.toast('Reordered PDF saved!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Rotate Pages
+// ============================================================
+function initRotate() {
+  const drop = document.getElementById('rotateDrop');
+  const input = document.getElementById('rotateInput');
+  const grid = document.getElementById('rotateGrid');
+  const actions = document.getElementById('rotateActions');
+
+  initDropZone(drop, input, async files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return;
+    State.rotateFile = f;
+    State.rotateSelected.clear();
+    State.rotateAngles = {};
+    UI.showLoading('Rendering pages...');
+    try {
+      grid.style.display = 'grid';
+      actions.style.display = 'flex';
+      const ab = await UI.fileToArrayBuffer(f);
+      const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+      const total = pdf.numPages;
+      grid.innerHTML = '';
+
+      for (let i = 1; i <= total; i++) {
+        UI.setProgress(Math.round((i / total) * 100));
+        State.rotateAngles[i] = 0;
+        const canvas = await renderPageToCanvas(pdf, i, 0.25);
+        const thumb = document.createElement('div');
+        thumb.className = 'page-thumb';
+        thumb.dataset.page = i;
+        thumb.id = 'rotThumb' + i;
+        thumb.innerHTML = `<div class="page-thumb-check">✓</div>`;
+        thumb.appendChild(canvas);
+        thumb.innerHTML += `<div class="page-thumb-label" id="rotLbl${i}">Page ${i} — 0°</div>`;
+        thumb.addEventListener('click', () => {
+          if (State.rotateSelected.has(i)) { State.rotateSelected.delete(i); thumb.classList.remove('selected'); }
+          else { State.rotateSelected.add(i); thumb.classList.add('selected'); }
+        });
+        grid.appendChild(thumb);
+      }
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+
+  function applyRotation(pages, delta) {
+    pages.forEach(p => {
+      State.rotateAngles[p] = ((State.rotateAngles[p] || 0) + delta + 360) % 360;
+      const thumb = document.getElementById('rotThumb' + p);
+      if (thumb) {
+        const canvas = thumb.querySelector('canvas');
+        canvas.style.transform = `rotate(${State.rotateAngles[p]}deg)`;
+        canvas.style.transformOrigin = 'center center';
+        document.getElementById('rotLbl' + p).textContent = `Page ${p} — ${State.rotateAngles[p]}°`;
+      }
+    });
+  }
+
+  document.getElementById('rotateCW').addEventListener('click', () => applyRotation([...State.rotateSelected], 90));
+  document.getElementById('rotateCCW').addEventListener('click', () => applyRotation([...State.rotateSelected], -90));
+  document.getElementById('rotateAllCW').addEventListener('click', () => applyRotation(Object.keys(State.rotateAngles).map(Number), 90));
+  document.getElementById('rotateAllCCW').addEventListener('click', () => applyRotation(Object.keys(State.rotateAngles).map(Number), -90));
+
+  document.getElementById('rotateSaveBtn').addEventListener('click', async () => {
+    if (!State.rotateFile) return;
+    try {
+      UI.showLoading('Applying rotations...');
+      const { PDFDocument, degrees } = PDFLib;
+      const ab = await UI.fileToArrayBuffer(State.rotateFile);
+      const pdf = await PDFDocument.load(ab);
+      pdf.getPages().forEach((page, idx) => {
+        const angle = State.rotateAngles[idx + 1] || 0;
+        if (angle !== 0) page.setRotation(degrees(angle));
+      });
+      const bytes = await pdf.save();
+      UI.downloadBytes(bytes, 'rotated.pdf');
+      UI.toast('Rotated PDF saved!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Create PDF from Text
+// ============================================================
+function initCreate() {
+  const imgInput = document.getElementById('createImgInput');
+  const imgList = document.getElementById('createImgList');
+
+  imgInput.addEventListener('change', () => {
+    State.createImages.push(...Array.from(imgInput.files));
+    refreshCreateImgs();
+    imgInput.value = '';
+  });
+
+  function refreshCreateImgs() {
+    imgList.innerHTML = '';
+    State.createImages.forEach((f, idx) => {
+      const item = makeFileItem(f, () => {
+        State.createImages.splice(idx, 1);
+        refreshCreateImgs();
+      });
+      imgList.appendChild(item);
+    });
+  }
+
+  document.getElementById('createBtn').addEventListener('click', async () => {
+    try {
+      UI.showLoading('Creating PDF...');
+      const { PDFDocument, rgb, StandardFonts } = PDFLib;
+      const pdf = await PDFDocument.create();
+      const font = await pdf.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+      const pageSizeKey = document.getElementById('createPageSize').value;
+      const fontSize = parseInt(document.getElementById('createFontSize').value) || 12;
+      const margin = parseInt(document.getElementById('createMargin').value) || 40;
+      const titleText = document.getElementById('createTitle').value.trim();
+      const bodyText = document.getElementById('createText').value;
+
+      const sizes = { A4: [595, 842], Letter: [612, 792] };
+      const [PW, PH] = sizes[pageSizeKey] || sizes.A4;
+
+      const addPage = () => {
+        const p = pdf.addPage([PW, PH]);
+        return { page: p, y: PH - margin };
+      };
+
+      let { page, y } = addPage();
+
+      // Title
+      if (titleText) {
+        page.drawText(titleText, { x: margin, y, font: boldFont, size: fontSize + 6, color: rgb(0,0,0) });
+        y -= (fontSize + 6) * 1.8;
+        page.drawLine({ start:{x:margin,y}, end:{x:PW-margin,y}, thickness:1, color:rgb(0.6,0.6,0.6) });
+        y -= 14;
+      }
+
+      // Body text — word wrap
+      const maxWidth = PW - margin * 2;
+      const lineH = fontSize * 1.5;
+      const paras = bodyText.split('\n');
+
+      for (const para of paras) {
+        if (!para.trim()) { y -= lineH; continue; }
+        const words = para.split(' ');
+        let line = '';
+        for (const word of words) {
+          const test = line ? line + ' ' + word : word;
+          const w = font.widthOfTextAtSize(test, fontSize);
+          if (w > maxWidth && line) {
+            if (y < margin + lineH) { ({ page, y } = addPage()); }
+            page.drawText(line, { x: margin, y, font, size: fontSize, color: rgb(0.1,0.1,0.1) });
+            y -= lineH;
+            line = word;
+          } else {
+            line = test;
+          }
+        }
+        if (line) {
+          if (y < margin + lineH) { ({ page, y } = addPage()); }
+          page.drawText(line, { x: margin, y, font, size: fontSize, color: rgb(0.1,0.1,0.1) });
+          y -= lineH;
+        }
+        y -= lineH * 0.3;
+      }
+
+      // Add images on new pages
+      for (let i = 0; i < State.createImages.length; i++) {
+        UI.setProgress(Math.round(50 + (i / State.createImages.length) * 50));
+        const f = State.createImages[i];
+        const ab = await UI.fileToArrayBuffer(f);
+        let img;
+        try {
+          if (f.type === 'image/png') img = await pdf.embedPng(ab);
+          else img = await pdf.embedJpg(ab);
+        } catch { continue; }
+        const { page: imgPage } = addPage();
+        const scale = Math.min((PW - margin*2) / img.width, (PH - margin*2) / img.height);
+        const dw = img.width * scale, dh = img.height * scale;
+        imgPage.drawImage(img, { x: margin + (PW-margin*2-dw)/2, y: margin + (PH-margin*2-dh)/2, width: dw, height: dh });
+      }
+
+      const bytes = await pdf.save();
+      UI.downloadBytes(bytes, 'created.pdf');
+      UI.toast('PDF created!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Annotate / Draw
+// ============================================================
+function initAnnotate() {
+  const drop = document.getElementById('annotateDrop');
+  const input = document.getElementById('annotateInput');
+  const workspace = document.getElementById('annotateWorkspace');
+  const blankRow = document.getElementById('annotateBlankRow');
+  const baseCanvas = document.getElementById('annotateBaseCanvas');
+  const drawCanvas = document.getElementById('annotateDrawCanvas');
+  const baseCtx = baseCanvas.getContext('2d');
+  const drawCtx = drawCanvas.getContext('2d');
+
+  let pdfJSDoc = null;
+
+  async function loadPage(num) {
+    if (!pdfJSDoc) return;
+    State.annotateCurrentPage = num;
+    const page = await pdfJSDoc.getPage(num);
+    const vp = page.getViewport({ scale: 1.2 });
+    baseCanvas.width = vp.width; baseCanvas.height = vp.height;
+    drawCanvas.width = vp.width; drawCanvas.height = vp.height;
+
+    // Restore saved drawing
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    if (State.annotateDrawings[num]) {
+      drawCtx.putImageData(State.annotateDrawings[num], 0, 0);
+    }
+    State.annotateHistory = [];
+    State.annotateRedoStack = [];
+
+    await page.render({ canvasContext: baseCtx, viewport: vp }).promise;
+    document.getElementById('annotatePageInfo').textContent = `Page ${num} of ${State.annotatePageCount}`;
+    document.getElementById('annotatePageNum').value = num;
+  }
+
+  function saveDrawing() {
+    State.annotateDrawings[State.annotateCurrentPage] = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  }
+
+  function pushHistory() {
+    State.annotateHistory.push(drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+    State.annotateRedoStack = [];
+  }
+
+  async function openAnnotate(file) {
+    const ab = await UI.fileToArrayBuffer(file);
+    pdfJSDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+    State.annotatePageCount = pdfJSDoc.numPages;
+    State.annotatePDF = file;
+    State.annotateDrawings = {};
+    drop.style.display = 'none';
+    blankRow.style.display = 'none';
+    workspace.style.display = 'block';
+    await loadPage(1);
+  }
+
+  initDropZone(drop, input, files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (f) openAnnotate(f);
+  });
+
+  document.getElementById('annotateBlankBtn').addEventListener('click', () => {
+    pdfJSDoc = null;
+    State.annotatePageCount = 1;
+    State.annotateCurrentPage = 1;
+    State.annotateDrawings = {};
+    baseCanvas.width = 595; baseCanvas.height = 842;
+    drawCanvas.width = 595; drawCanvas.height = 842;
+    baseCtx.fillStyle = '#fff';
+    baseCtx.fillRect(0, 0, 595, 842);
+    drawCtx.clearRect(0, 0, 595, 842);
+    drop.style.display = 'none';
+    blankRow.style.display = 'none';
+    workspace.style.display = 'block';
+    document.getElementById('annotatePageInfo').textContent = 'Blank canvas';
+  });
+
+  // Mode switching
+  document.getElementById('drawModeDraw').addEventListener('click', () => setMode('draw'));
+  document.getElementById('drawModeText').addEventListener('click', () => setMode('text'));
+  document.getElementById('drawModeErase').addEventListener('click', () => setMode('erase'));
+
+  function setMode(mode) {
+    State.annotateMode = mode;
+    ['draw','text','erase'].forEach(m => document.getElementById('drawMode' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode));
+    document.getElementById('textOverlayCard').style.display = mode === 'text' ? 'block' : 'none';
+    drawCanvas.style.cursor = mode === 'text' ? 'text' : 'crosshair';
+  }
+
+  // Drawing
+  drawCanvas.addEventListener('mousedown', e => {
+    if (State.annotateMode === 'text') return;
+    pushHistory();
+    State.annotateIsDrawing = true;
+    const r = drawCanvas.getBoundingClientRect();
+    const sx = drawCanvas.width / r.width;
+    const sy = drawCanvas.height / r.height;
+    State.annotateLastX = (e.clientX - r.left) * sx;
+    State.annotateLastY = (e.clientY - r.top) * sy;
+  });
+
+  drawCanvas.addEventListener('mousemove', e => {
+    if (!State.annotateIsDrawing) return;
+    const r = drawCanvas.getBoundingClientRect();
+    const sx = drawCanvas.width / r.width;
+    const sy = drawCanvas.height / r.height;
+    const x = (e.clientX - r.left) * sx;
+    const y = (e.clientY - r.top) * sy;
+    const size = parseInt(document.getElementById('brushSize').value);
+
+    drawCtx.beginPath();
+    if (State.annotateMode === 'erase') {
+      drawCtx.globalCompositeOperation = 'destination-out';
+      drawCtx.lineWidth = size * 3;
+    } else {
+      drawCtx.globalCompositeOperation = 'source-over';
+      drawCtx.strokeStyle = document.getElementById('drawColor').value;
+      drawCtx.lineWidth = size;
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+    }
+    drawCtx.moveTo(State.annotateLastX, State.annotateLastY);
+    drawCtx.lineTo(x, y);
+    drawCtx.stroke();
+    State.annotateLastX = x; State.annotateLastY = y;
+  });
+
+  drawCanvas.addEventListener('mouseup', () => {
+    State.annotateIsDrawing = false;
+    drawCtx.globalCompositeOperation = 'source-over';
+    saveDrawing();
+  });
+  drawCanvas.addEventListener('mouseleave', () => {
+    State.annotateIsDrawing = false;
+    drawCtx.globalCompositeOperation = 'source-over';
+  });
+
+  // Touch support
+  function getTouchPos(e) {
+    const r = drawCanvas.getBoundingClientRect();
+    const t = e.touches[0];
+    const sx = drawCanvas.width / r.width;
+    const sy = drawCanvas.height / r.height;
+    return { x: (t.clientX - r.left) * sx, y: (t.clientY - r.top) * sy };
+  }
+  drawCanvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (State.annotateMode === 'text') return;
+    pushHistory();
+    State.annotateIsDrawing = true;
+    const {x, y} = getTouchPos(e);
+    State.annotateLastX = x; State.annotateLastY = y;
+  }, {passive:false});
+  drawCanvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!State.annotateIsDrawing) return;
+    const {x, y} = getTouchPos(e);
+    const size = parseInt(document.getElementById('brushSize').value);
+    drawCtx.beginPath();
+    if (State.annotateMode === 'erase') { drawCtx.globalCompositeOperation = 'destination-out'; drawCtx.lineWidth = size * 3; }
+    else { drawCtx.globalCompositeOperation = 'source-over'; drawCtx.strokeStyle = document.getElementById('drawColor').value; drawCtx.lineWidth = size; drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; }
+    drawCtx.moveTo(State.annotateLastX, State.annotateLastY);
+    drawCtx.lineTo(x, y);
+    drawCtx.stroke();
+    State.annotateLastX = x; State.annotateLastY = y;
+  }, {passive:false});
+  drawCanvas.addEventListener('touchend', () => { State.annotateIsDrawing = false; drawCtx.globalCompositeOperation = 'source-over'; saveDrawing(); });
+
+  // Text placement
+  drawCanvas.addEventListener('click', e => {
+    if (State.annotateMode !== 'text') return;
+    const text = document.getElementById('overlayText').value.trim();
+    if (!text) return UI.toast('Enter text in the field first', 'info');
+    pushHistory();
+    const r = drawCanvas.getBoundingClientRect();
+    const sx = drawCanvas.width / r.width;
+    const sy = drawCanvas.height / r.height;
+    const x = (e.clientX - r.left) * sx;
+    const y = (e.clientY - r.top) * sy;
+    const size = parseInt(document.getElementById('overlayFontSize').value) || 18;
+    drawCtx.font = `${size}px sans-serif`;
+    drawCtx.fillStyle = document.getElementById('overlayColor').value;
+    drawCtx.globalCompositeOperation = 'source-over';
+    drawCtx.fillText(text, x, y);
+    saveDrawing();
+  });
+
+  // Undo / Redo / Clear
+  document.getElementById('drawUndo').addEventListener('click', () => {
+    if (!State.annotateHistory.length) return;
+    State.annotateRedoStack.push(drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+    const prev = State.annotateHistory.pop();
+    drawCtx.putImageData(prev, 0, 0);
+    saveDrawing();
+  });
+  document.getElementById('drawRedo').addEventListener('click', () => {
+    if (!State.annotateRedoStack.length) return;
+    State.annotateHistory.push(drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+    const next = State.annotateRedoStack.pop();
+    drawCtx.putImageData(next, 0, 0);
+    saveDrawing();
+  });
+  document.getElementById('drawClear').addEventListener('click', () => {
+    pushHistory();
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    saveDrawing();
+  });
+
+  // Page navigation
+  document.getElementById('annotateGoPage').addEventListener('click', () => {
+    const n = parseInt(document.getElementById('annotatePageNum').value);
+    if (n >= 1 && n <= State.annotatePageCount) {
+      saveDrawing(); loadPage(n);
+    }
+  });
+  document.getElementById('annotateNextPage').addEventListener('click', () => {
+    if (State.annotateCurrentPage < State.annotatePageCount) {
+      saveDrawing(); loadPage(State.annotateCurrentPage + 1);
+    }
+  });
+  document.getElementById('annotatePrevPage').addEventListener('click', () => {
+    if (State.annotateCurrentPage > 1) {
+      saveDrawing(); loadPage(State.annotateCurrentPage - 1);
+    }
+  });
+
+  // Save annotated PDF
+  document.getElementById('annotateSaveBtn').addEventListener('click', async () => {
+    saveDrawing();
+    try {
+      UI.showLoading('Saving annotated PDF...');
+      const { PDFDocument, rgb } = PDFLib;
+      let srcPdf;
+      if (State.annotatePDF) {
+        const ab = await UI.fileToArrayBuffer(State.annotatePDF);
+        srcPdf = await PDFDocument.load(ab);
+      } else {
+        srcPdf = await PDFDocument.create();
+        srcPdf.addPage([595, 842]);
+      }
+
+      const pageCount = State.annotatePDF ? srcPdf.getPageCount() : 1;
+      for (let i = 1; i <= pageCount; i++) {
+        UI.setProgress(Math.round((i / pageCount) * 100));
+        const drawing = State.annotateDrawings[i];
+        if (!drawing) continue;
+
+        // Convert drawing ImageData to PNG via temp canvas
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = drawing.width; tmpCanvas.height = drawing.height;
+        tmpCanvas.getContext('2d').putImageData(drawing, 0, 0);
+        const pngDataUrl = tmpCanvas.toDataURL('image/png');
+        const pngResp = await fetch(pngDataUrl);
+        const pngBytes = await pngResp.arrayBuffer();
+        const pngImg = await srcPdf.embedPng(pngBytes);
+        const page = srcPdf.getPage(i - 1);
+        const { width, height } = page.getSize();
+        page.drawImage(pngImg, { x: 0, y: 0, width, height });
+      }
+
+      const bytes = await srcPdf.save();
+      UI.downloadBytes(bytes, 'annotated.pdf');
+      UI.toast('Annotated PDF saved!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Page Numbers
+// ============================================================
+function initPageNums() {
+  const drop = document.getElementById('pagenumsDrop');
+  const input = document.getElementById('pagenumsInput');
+  const opts = document.getElementById('pagenumsOptions');
+  const btn = document.getElementById('pagenumsBtn');
+
+  initDropZone(drop, input, files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return;
+    State.pagenumsFile = f;
+    opts.style.display = 'block';
+    btn.disabled = false;
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!State.pagenumsFile) return;
+    try {
+      UI.showLoading('Adding page numbers...');
+      const { PDFDocument, rgb, StandardFonts } = PDFLib;
+      const ab = await UI.fileToArrayBuffer(State.pagenumsFile);
+      const pdf = await PDFDocument.load(ab);
+      const font = await pdf.embedFont(StandardFonts.Helvetica);
+      const fontSize = parseInt(document.getElementById('pagenumSize').value) || 11;
+      const startNum = parseInt(document.getElementById('pagenumStart').value) || 1;
+      const pos = document.getElementById('pagenumPos').value;
+      const fmt = document.getElementById('pagenumFormat').value;
+      const total = pdf.getPageCount();
+      const margin = 30;
+
+      pdf.getPages().forEach((page, idx) => {
+        const num = idx + startNum;
+        let label;
+        if (fmt === 'n') label = String(num);
+        else if (fmt === 'page-n') label = `Page ${num}`;
+        else label = `${num} of ${total}`;
+
+        const { width, height } = page.getSize();
+        const tw = font.widthOfTextAtSize(label, fontSize);
+        let x, y;
+        if (pos.includes('bottom')) y = margin;
+        else y = height - margin;
+        if (pos.includes('center')) x = (width - tw) / 2;
+        else if (pos.includes('right')) x = width - margin - tw;
+        else x = margin;
+
+        page.drawText(label, { x, y, size: fontSize, font, color: rgb(0.3, 0.3, 0.3) });
+      });
+
+      const bytes = await pdf.save();
+      UI.downloadBytes(bytes, 'numbered.pdf');
+      UI.toast('Page numbers added!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Watermark
+// ============================================================
+function initWatermark() {
+  const drop = document.getElementById('watermarkDrop');
+  const input = document.getElementById('watermarkInput');
+  const opts = document.getElementById('watermarkOptions');
+  const btn = document.getElementById('watermarkBtn');
+
+  initDropZone(drop, input, files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return;
+    State.watermarkFile = f;
+    opts.style.display = 'block';
+    btn.disabled = false;
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!State.watermarkFile) return;
+    try {
+      UI.showLoading('Applying watermark...');
+      const { PDFDocument, rgb, StandardFonts, degrees } = PDFLib;
+      const ab = await UI.fileToArrayBuffer(State.watermarkFile);
+      const pdf = await PDFDocument.load(ab);
+      const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+      const text = document.getElementById('watermarkText').value || 'WATERMARK';
+      const size = parseInt(document.getElementById('watermarkSize').value) || 60;
+      const opacity = (parseInt(document.getElementById('watermarkOpacity').value) || 20) / 100;
+      const angle = parseInt(document.getElementById('watermarkAngle').value) || -45;
+
+      pdf.getPages().forEach(page => {
+        const { width, height } = page.getSize();
+        const tw = font.widthOfTextAtSize(text, size);
+        page.drawText(text, {
+          x: (width - tw) / 2,
+          y: (height - size) / 2,
+          size,
+          font,
+          color: rgb(0.5, 0.5, 0.5),
+          opacity,
+          rotate: degrees(angle),
+        });
+      });
+
+      const bytes = await pdf.save();
+      UI.downloadBytes(bytes, 'watermarked.pdf');
+      UI.toast('Watermark applied!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// MODULE: Page Size
+// ============================================================
+function initPageSize() {
+  const drop = document.getElementById('pagesizeDrop');
+  const input = document.getElementById('pagesizeInput');
+  const opts = document.getElementById('pagesizeOptions');
+  const btn = document.getElementById('pagesizeBtn');
+
+  initDropZone(drop, input, files => {
+    const f = files.find(f => f.name.endsWith('.pdf'));
+    if (!f) return;
+    State.pagesizeFile = f;
+    opts.style.display = 'block';
+    btn.disabled = false;
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!State.pagesizeFile) return;
+    try {
+      UI.showLoading('Resizing pages...');
+      const { PDFDocument } = PDFLib;
+      const ab = await UI.fileToArrayBuffer(State.pagesizeFile);
+      const srcPdf = await PDFDocument.load(ab);
+      const out = await PDFDocument.create();
+
+      const formats = {
+        a4:     [595.28, 841.89],
+        letter: [612, 792],
+        legal:  [612, 1008],
+        a3:     [841.89, 1190.55],
+        a5:     [419.53, 595.28],
+      };
+      const fmt = document.getElementById('pagesizeFormat').value;
+      const fitMode = document.getElementById('pagesizeFit').value;
+      const [tw, th] = formats[fmt] || formats.a4;
+
+      const srcPages = srcPdf.getPages();
+      for (let i = 0; i < srcPages.length; i++) {
+        UI.setProgress(Math.round((i / srcPages.length) * 90));
+        const [copiedPage] = await out.copyPages(srcPdf, [i]);
+        const newPage = out.addPage([tw, th]);
+
+        // Embed source page as XObject via rasterize workaround:
+        // We use pdf-lib page embedding
+        const { width: sw, height: sh } = copiedPage.getSize();
+        const embeds = await out.embedPages([copiedPage]);
+        const embed = embeds[0];
+
+        let sx = tw / sw, sy = th / sh, scale;
+        if (fitMode === 'scale') scale = Math.min(sx, sy);
+        else if (fitMode === 'center') scale = 1;
+        else scale = Math.max(sx, sy); // crop
+
+        const dw = sw * scale, dh = sh * scale;
+        const dx = (tw - dw) / 2, dy = (th - dh) / 2;
+        newPage.drawPage(embed, { x: dx, y: dy, width: dw, height: dh });
+      }
+
+      UI.setProgress(100);
+      const bytes = await out.save();
+      UI.downloadBytes(bytes, 'resized.pdf');
+      UI.toast('Pages resized!', 'success');
+    } catch(e) {
+      UI.toast('Error: ' + e.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initNav();
+  initImg2PDF();
+  initPDF2Img();
+  initMerge();
+  initSplit();
+  initReorder();
+  initRotate();
+  initCreate();
+  initAnnotate();
+  initPageNums();
+  initWatermark();
+  initPageSize();
+
+  UI.toast('PDFForge ready — 100% in-browser', 'success');
+});
+</script>
+</body>
+</html>
