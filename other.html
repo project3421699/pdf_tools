@@ -802,7 +802,21 @@ textarea {
       offline-ready
     </div>
   </header>
+<nav style="width: 100%; display: flex; justify-content: center; padding: 15px 0; position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(8px); background: rgba(240, 237, 232, 0.7); border-bottom: 1px solid #ddd8d2; margin-bottom: 20px;">
+  <div style="display: flex; gap: 12px; background: #ffffff; padding: 6px; border-radius: 99px; border: 1.5px solid #ddd8d2; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    
+    <a href="index.html" id="nav-squish" style="text-decoration: none; color: #9a9590; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+      <span style="font-size: 0.9rem;">☁️</span> Squish
+    </a>
 
+    <a href="pdf-splitter.html" id="nav-extract" style="text-decoration: none; color: #9a9590; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+      <span style="font-size: 0.9rem;">✂️</span> Extract
+    </a>
+<a href="other.html" id="nav-extract" style="text-decoration: none; color: #9a9590; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+      <span style="font-size: 0.9rem;">📄</span> Other
+</a>
+  </div>
+</nav>
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-section-label">Convert</div>
@@ -2613,5 +2627,15 @@ document.addEventListener('DOMContentLoaded', () => {
   UI.toast('PDFForge ready — 100% in-browser', 'success');
 });
 </script>
+   <script>
+  // Detect current page and apply "Active" inline styles
+  const isSplitter = window.location.pathname.includes('pdf-splitter.html');
+  const activeBtn = isSplitter ? document.getElementById('nav-extract') : document.getElementById('nav-squish');
+  
+  if (activeBtn) {
+    activeBtn.style.background = '#1a1612'; // Dark color for active tab
+    activeBtn.style.color = '#ffffff';      // White text for active tab
+  }
+   </script>
 </body>
 </html>
