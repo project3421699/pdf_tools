@@ -802,21 +802,23 @@ textarea {
       offline-ready
     </div>
   </header>
-<nav style="width: 100%; display: flex; justify-content: center; padding: 15px 0; position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(8px); background: rgba(240, 237, 232, 0.7); border-bottom: 1px solid #ddd8d2; margin-bottom: 20px;">
-  <div style="display: flex; gap: 12px; background: #ffffff; padding: 6px; border-radius: 99px; border: 1.5px solid #ddd8d2; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+<nav style="width: 100%; display: flex; justify-content: center; padding: 10px 0; position: sticky; top: 56px; z-index: 90; backdrop-filter: blur(8px); background: rgba(13, 13, 15, 0.8); border-bottom: 1px solid var(--border);">
+  <div style="display: flex; gap: 8px; background: var(--bg-panel); padding: 4px; border-radius: 99px; border: 1px solid var(--border);">
     
-    <a href="index.html" id="nav-squish" style="text-decoration: none; color: #9a9590; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+    <a href="index.html" id="nav-squish" style="text-decoration: none; color: var(--text-secondary); font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; padding: 6px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
       <span style="font-size: 0.9rem;">☁️</span> Squish
     </a>
 
-    <a href="pdf-splitter.html" id="nav-extract" style="text-decoration: none; color: #9a9590; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+    <a href="pdf-splitter.html" id="nav-extract" style="text-decoration: none; color: var(--text-secondary); font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; padding: 6px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
       <span style="font-size: 0.9rem;">✂️</span> Extract
     </a>
-<a href="other.html" id="nav-extract" style="text-decoration: none; color: #9a9590; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+
+    <a href="other.html" id="nav-other" style="text-decoration: none; color: var(--text-secondary); font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; padding: 6px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
       <span style="font-size: 0.9rem;">📄</span> Other
-</a>
+    </a>
   </div>
 </nav>
+
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-section-label">Convert</div>
@@ -2627,15 +2629,20 @@ document.addEventListener('DOMContentLoaded', () => {
   UI.toast('PDFForge ready — 100% in-browser', 'success');
 });
 </script>
-   <script>
-  // Detect current page and apply "Active" inline styles
-  const isSplitter = window.location.pathname.includes('pdf-splitter.html');
-  const activeBtn = isSplitter ? document.getElementById('nav-extract') : document.getElementById('nav-squish');
+<script>
+  const path = window.location.pathname;
+  let activeId = 'nav-other'; // default
   
+  if (path.includes('pdf-splitter.html')) activeId = 'nav-extract';
+  else if (path.includes('index.html') || path === '/') activeId = 'nav-squish';
+  else if (path.includes('other.html')) activeId = 'nav-other';
+
+  const activeBtn = document.getElementById(activeId);
   if (activeBtn) {
-    activeBtn.style.background = '#1a1612'; // Dark color for active tab
-    activeBtn.style.color = '#ffffff';      // White text for active tab
+    activeBtn.style.background = 'var(--amber)';
+    activeBtn.style.color = '#000000';
   }
-   </script>
+</script>
+
 </body>
 </html>
